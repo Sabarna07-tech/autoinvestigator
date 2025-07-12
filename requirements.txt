@@ -134,3 +134,6 @@ yfinance
 duckduckgo-search
 langchain-google-genai
 pydantic
+flask_dance
+flask_sqlalchemy
+flask_login

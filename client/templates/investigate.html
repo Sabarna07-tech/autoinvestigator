@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoInvestigator - Investigation Interface</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="{{ url_for('static', filename='images/favicon.svg') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/investigate.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Animated Background -->
+    <div class="animated-background">
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      <div class="gradient-orb orb-3"></div>
+      <div class="particles"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">
+          <img
+            src="{{ url_for('static', filename='images/logo.svg') }}"
+            alt="AutoInvestigator Logo"
+            style="
+              height: 32px;
+              width: 32px;
+              vertical-align: middle;
+              margin-right: 8px;
+            "
+          />
+          <span>AutoInvestigator</span>
+        </div>
+        <div class="nav-links">
+          <a href="/" class="back-link">
+            <i class="fas fa-arrow-left"></i>
+            Back to Home
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Main Interface -->
+    <div class="interface-container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h3>Investigation Tools</h3>
+          <p>Select tools to enhance your analysis</p>
+        </div>
+        <div class="tools-list">
+          <div class="tool-item active" data-tool="all">
+            <i class="fas fa-search"></i>
+            <span>All Tools</span>
+          </div>
+          <div class="tool-item" data-tool="financial">
+            <i class="fas fa-chart-line"></i>
+            <span>Financial Data</span>
+          </div>
+          <div class="tool-item" data-tool="news">
+            <i class="fas fa-newspaper"></i>
+            <span>News Analysis</span>
+          </div>
+          <div class="tool-item" data-tool="sec">
+            <i class="fas fa-file-alt"></i>
+            <span>SEC Filings</span>
+          </div>
+          <div class="tool-item" data-tool="sentiment">
+            <i class="fas fa-heart"></i>
+            <span>Sentiment</span>
+          </div>
+          <div class="tool-item" data-tool="risk">
+            <i class="fas fa-shield-alt"></i>
+            <span>Risk Assessment</span>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main Chat Area -->
+      <main class="chat-area">
+        <div class="chat-header">
+          <h2>AI Financial Investigator</h2>
+          <p>Ask me anything about companies, stocks, or financial markets</p>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <!-- Welcome Message -->
+          <div class="message ai-message">
+            <div class="message-avatar">
+              <i class="fas fa-robot"></i>
+            </div>
+            <div class="message-content">
+              <div class="message-text">
+                <p>
+                  Hello! I'm your AI Financial Investigator. I can help you
+                  analyze companies, stocks, and financial markets using
+                  advanced AI tools.
+                </p>
+                <p>Try asking me questions like:</p>
+                <ul>
+                  <li>
+                    "Analyze Apple's financial performance and recent news"
+                  </li>
+                  <li>
+                    "What are the risks associated with investing in Tesla?"
+                  </li>
+                  <li>
+                    "Compare the financial health of Microsoft and Google"
+                  </li>
+                  <li>"What's the market sentiment around cryptocurrency?"</li>
+                </ul>
+              </div>
+              <div class="message-time">Just now</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="input-area">
+          <div class="input-container">
+            <div class="input-wrapper">
+              <textarea
+                id="userInput"
+                placeholder="Ask about any company, stock, or financial topic..."
+                rows="1"
+                maxlength="1000"
+              ></textarea>
+              <div class="input-actions">
+                <button class="send-button" id="sendButton" disabled>
+                  <i class="fas fa-paper-plane"></i>
+                </button>
+              </div>
+            </div>
+            <div class="input-footer">
+              <span class="char-count">0/1000</span>
+              <span class="input-hint"
+                >Press Enter to send, Shift+Enter for new line</span
+              >
+            </div>
+          </div>
+        </div>
+      </main>
+
+      <!-- Results Panel -->
+      <aside class="results-panel">
+        <div class="results-header">
+          <h3>Investigation Results</h3>
+          <button class="clear-results" id="clearResults">
+            <i class="fas fa-trash"></i>
+            Clear
+          </button>
+        </div>
+        <div class="results-content" id="resultsContent">
+          <div class="empty-state">
+            <i class="fas fa-search"></i>
+            <p>Start an investigation to see results here</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="loading-content">
+        <div class="loading-spinner">
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+          <div class="spinner-ring"></div>
+        </div>
+        <h3>Investigating...</h3>
+        <p>Gathering data and analyzing information</p>
+        <div class="loading-steps">
+          <div class="step active">
+            <i class="fas fa-search"></i>
+            <span>Searching data sources</span>
+          </div>
+          <div class="step">
+            <i class="fas fa-chart-line"></i>
+            <span>Analyzing financial data</span>
+          </div>
+          <div class="step">
+            <i class="fas fa-brain"></i>
+            <span>Processing with AI</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/investigate.js') }}"></script>
+  </body>
+</html>
