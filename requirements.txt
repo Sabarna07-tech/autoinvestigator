@@ -134,3 +134,4 @@ yfinance
 duckduckgo-search
 langchain-google-genai
 pydantic
+gradio

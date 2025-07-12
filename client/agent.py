@@ -9,7 +9,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 
 from client.pydantic_models import RequestPayload
-from client.config import SERVER_URL, GEMINI_API_KEY
+from client.config import SERVER_URL, GEMINI_API_KEY, check_api_key
 
 class AutoInvestigatorAgent:
     """
@@ -20,6 +20,8 @@ class AutoInvestigatorAgent:
         Initializes the agent, setting up the LLM and the server URL.
         """
         self.server_url = SERVER_URL
+        # Check API key when initializing LLM
+        check_api_key()
         self.llm = ChatGoogleGenerativeAI(model="gemini-2.0-flash", google_api_key=GEMINI_API_KEY)
 
     def _get_main_prompt(self) -> str:

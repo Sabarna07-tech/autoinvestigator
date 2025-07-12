@@ -14,15 +14,27 @@ class MailSender:
     sendMailBatch(subject:str, message:str, dests:list) -> sends mail to multiple receivers
     """
     def __init__(self):
-        try:
-            self.__sender_mail = os.getenv("SENDER_MAIL")
-            self.__pass = os.getenv("MAIL_PASS")
-            self.sender = smtplib.SMTP('smtp.gmail.com', 587)
-            self.sender.starttls()
-            self.sender.login(self.__sender_mail,self.__pass)
-        except Exception as e:
-            print("Error occurred : \n",e)
-            raise e
+        self.__sender_mail = os.getenv("SENDER_MAIL")
+        self.__pass = os.getenv("MAIL_PASS")
+        self.sender = None  # Initialize as None, connect when needed
+        self._connected = False
+
+    def _connect(self):
+        """Lazy connection to SMTP server"""
+        if not self._connected:
+            try:
+                self.sender = smtplib.SMTP('smtp.gmail.com', 587)
+                self.sender.starttls()
+                if self.__sender_mail and self.__pass:
+                    self.sender.login(self.__sender_mail, self.__pass)
+                    self._connected = True
+                else:
+                    print("Warning: Email credentials not configured")
+                    return False
+            except Exception as e:
+                print("Error connecting to email server:", e)
+                return False
+        return True
 
     def sendMail(self, subject:str, message:str, dest:str)->bool:
         """
@@ -36,6 +48,9 @@ class MailSender:
             bool : True, on success False, on failure
         """
         try:
+            if not self._connect():
+                return False
+                
             msg = EmailMessage()
             msg['Subject'] = subject
             msg['From'] = self.__sender_mail
@@ -46,7 +61,6 @@ class MailSender:
             return True
         except Exception as e:
             print("Something went wrong :\n",e)
-            raise e
             return False
 
     def sendMailBatch(self, subject:str, message:str, dests:list)->int:
