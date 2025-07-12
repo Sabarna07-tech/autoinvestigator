@@ -1,0 +1,15 @@
+request:
+  id: 'id'
+  requests:
+    name: 'requests'
+    id: 'id'
+    method: 'method'
+    params: 'params'
+    
+response:
+  id: 'id'
+  results:
+    name: 'results'
+    id: 'id'
+    method: 'method'
+    result: 'results'    

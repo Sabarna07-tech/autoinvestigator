@@ -1,0 +1,10 @@
+import yaml
+
+def load_yaml(path="server/config.yaml"):
+	config = {}
+    try:
+        with open(path, 'r') as f:
+            config = yaml.safe_load(f)
+    except (FileNotFoundError, KeyError) as e:
+        raise e
+    return config

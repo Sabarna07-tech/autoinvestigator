@@ -1,0 +1,15 @@
+version = 1
+<<<<<<< HEAD
+revision = 1
+=======
+revision = 2
+>>>>>>> step
+requires-python = ">=3.8"
+
+[[package]]
+name = "autoinvestigator"
+version = "0.1.0"
+source = { editable = "." }
+
+[package.metadata]
+provides-extras = ["dev"]
