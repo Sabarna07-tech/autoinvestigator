@@ -1,19 +1,79 @@
 // Investigation Interface JavaScript
 class InvestigationInterface {
     constructor() {
+        this.selectedTool = 'all';
+        this.selectedFile = null;
+        this.availableTools = {
+            'all': {
+                name: 'All Tools (Deep Research)',
+                description: 'Uses all available analysis tools for comprehensive investigation',
+                icon: 'fas fa-search-plus'
+            },
+            'financial': {
+                name: 'Financial Data Analysis',
+                description: 'Analyzes financial statements, ratios, and market data',
+                icon: 'fas fa-chart-line'
+            },
+            'news': {
+                name: 'News Analysis',
+                description: 'Scans and analyzes recent news and market sentiment',
+                icon: 'fas fa-newspaper'
+            },
+            'websearch': {
+                name: 'Web Search',
+                description: 'Searches the web for relevant information and data',
+                icon: 'fas fa-globe'
+            },
+            'sec': {
+                name: 'SEC Filings',
+                description: 'Analyzes SEC filings and regulatory documents',
+                icon: 'fas fa-file-alt'
+            },
+            'sentiment': {
+                name: 'Sentiment Analysis',
+                description: 'Analyzes market sentiment and social media trends',
+                icon: 'fas fa-heart'
+            },
+            'risk': {
+                name: 'Risk Assessment',
+                description: 'Evaluates investment risks and potential concerns',
+                icon: 'fas fa-shield-alt'
+            },
+            'gemini': {
+                name: 'AI Analysis (Gemini)',
+                description: 'Advanced AI-powered analysis and insights',
+                icon: 'fas fa-brain'
+            }
+        };
+        
+        this.isLoading = false;
+        this.initializeElements();
+        this.initializeEventListeners();
+        this.initializeAutoResize();
+    }
+
+    initializeElements() {
         this.chatMessages = document.getElementById('chatMessages');
         this.userInput = document.getElementById('userInput');
         this.sendButton = document.getElementById('sendButton');
         this.loadingOverlay = document.getElementById('loadingOverlay');
         this.resultsContent = document.getElementById('resultsContent');
         this.clearResultsButton = document.getElementById('clearResults');
-        this.toolItems = document.querySelectorAll('.tool-item');
+        this.toolItems = document.querySelectorAll('.sidebar .tool-item');
         
-        this.isLoading = false;
-        this.selectedTool = 'all';
+        // Tools dropdown elements
+        this.toolsBtn = document.getElementById('toolsBtn');
+        this.toolsDropdown = document.getElementById('toolsDropdown');
+        this.dropdownToolItems = document.querySelectorAll('.tools-dropdown-menu .tool-item[data-tool]');
         
-        this.initializeEventListeners();
-        this.initializeAutoResize();
+        // File upload elements
+        this.fileInput = document.getElementById('fileInput');
+        this.fileUploadBtn = document.getElementById('fileUploadBtn');
+        this.fileIndicator = document.getElementById('fileIndicator');
+        this.removeFileBtn = document.getElementById('removeFileBtn');
+        
+        // Character count
+        this.charCount = document.getElementById('charCount');
     }
 
     initializeEventListeners() {
@@ -35,9 +95,48 @@ class InvestigationInterface {
             this.autoResize();
         });
         
-        // Tool selection
+        // Sidebar tool selection
         this.toolItems.forEach(item => {
-            item.addEventListener('click', () => this.selectTool(item));
+            item.addEventListener('click', () => this.selectToolFromSidebar(item));
+        });
+        
+        // Tools dropdown toggle
+        this.toolsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleToolsDropdown();
+        });
+
+        // Dropdown tool selection
+        this.dropdownToolItems.forEach(button => {
+            button.addEventListener('click', (e) => {
+                const tool = e.target.closest('.tool-item').dataset.tool;
+                this.selectTool(tool);
+                this.hideToolsDropdown();
+            });
+        });
+
+        // File upload
+        this.fileUploadBtn.addEventListener('click', () => {
+            this.fileInput.click();
+            this.hideToolsDropdown();
+        });
+
+        this.fileInput.addEventListener('change', (e) => {
+            this.handleFileSelection(e.target.files[0]);
+        });
+
+        // Remove file button
+        if (this.removeFileBtn) {
+            this.removeFileBtn.addEventListener('click', () => {
+                this.removeFile();
+            });
+        }
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!this.toolsBtn.contains(e.target) && !this.toolsDropdown.contains(e.target)) {
+                this.hideToolsDropdown();
+            }
         });
         
         // Clear results
@@ -58,33 +157,86 @@ class InvestigationInterface {
 
     updateCharacterCount() {
         const count = this.userInput.value.length;
-        const charCount = document.querySelector('.char-count');
-        charCount.textContent = `${count}/1000`;
-        
-        // Change color when approaching limit
-        if (count > 900) {
-            charCount.style.color = '#ff6b6b';
-        } else if (count > 800) {
-            charCount.style.color = '#ffd93d';
-        } else {
-            charCount.style.color = '#808080';
+        if (this.charCount) {
+            this.charCount.textContent = `${count}/1000`;
+            
+            // Change color when approaching limit
+            if (count > 900) {
+                this.charCount.style.color = '#ff6b6b';
+            } else if (count > 800) {
+                this.charCount.style.color = '#ffd93d';
+            } else {
+                this.charCount.style.color = '#808080';
+            }
         }
     }
 
     updateSendButtonState() {
         const hasText = this.userInput.value.trim().length > 0;
-        this.sendButton.disabled = !hasText || this.isLoading;
+        const hasFile = this.selectedFile !== null;
+        this.sendButton.disabled = (!hasText && !hasFile) || this.isLoading;
     }
 
-    selectTool(item) {
-        // Remove active class from all tools
+    // Tools Dropdown Methods
+    toggleToolsDropdown() {
+        this.toolsDropdown.classList.toggle('show');
+        
+        // Update button appearance when dropdown is open
+        if (this.toolsDropdown.classList.contains('show')) {
+            this.toolsBtn.style.background = 'rgba(102, 126, 234, 0.2)';
+            this.toolsBtn.style.borderColor = 'rgba(102, 126, 234, 0.4)';
+        } else {
+            this.toolsBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+            this.toolsBtn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        }
+    }
+
+    hideToolsDropdown() {
+        this.toolsDropdown.classList.remove('show');
+        this.toolsBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+        this.toolsBtn.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+    }
+
+    selectTool(tool) {
+        this.selectedTool = tool;
+        
+        // Update visual selection in dropdown
+        this.dropdownToolItems.forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        const selectedBtn = document.querySelector(`.tools-dropdown-menu [data-tool="${tool}"]`);
+        if (selectedBtn) {
+            selectedBtn.classList.add('selected');
+        }
+        
+        // Update tools button display
+        this.updateToolsButtonDisplay(tool);
+        
+        // Update sidebar selection to match
+        this.updateSidebarSelection(tool);
+        
+        console.log('Selected tool:', tool, this.availableTools[tool]);
+        
+        // Show tool selection feedback
+        this.showToolSelectionFeedback(tool);
+    }
+
+    selectToolFromSidebar(item) {
+        // Remove active class from all sidebar tools
         this.toolItems.forEach(tool => tool.classList.remove('active'));
         
         // Add active class to selected tool
         item.classList.add('active');
         
         // Update selected tool
-        this.selectedTool = item.dataset.tool;
+        const tool = item.dataset.tool;
+        if (tool) {
+            this.selectedTool = tool;
+            this.updateToolsButtonDisplay(tool);
+            this.updateDropdownSelection(tool);
+            this.showToolSelectionFeedback(tool);
+        }
         
         // Add visual feedback
         item.style.transform = 'scale(0.95)';
@@ -93,9 +245,139 @@ class InvestigationInterface {
         }, 150);
     }
 
+    updateToolsButtonDisplay(tool) {
+        const toolInfo = this.availableTools[tool];
+        if (toolInfo) {
+            const buttonText = this.toolsBtn.querySelector('span');
+            buttonText.textContent = toolInfo.name.length > 20 ? 
+                toolInfo.name.substring(0, 17) + '...' : toolInfo.name;
+            
+            // Update the tools icon
+            const toolsIcon = this.toolsBtn.querySelector('.tools-icon');
+            if (toolsIcon) {
+                toolsIcon.className = toolInfo.icon + ' tools-icon';
+            }
+        }
+    }
+
+    updateSidebarSelection(tool) {
+        // Update sidebar to match selected tool
+        this.toolItems.forEach(item => {
+            item.classList.remove('active');
+        });
+        
+        const sidebarItem = document.querySelector(`.sidebar .tool-item[data-tool="${tool}"]`);
+        if (sidebarItem) {
+            sidebarItem.classList.add('active');
+        }
+    }
+
+    updateDropdownSelection(tool) {
+        // Update dropdown to match sidebar selection
+        this.dropdownToolItems.forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        const dropdownItem = document.querySelector(`.tools-dropdown-menu [data-tool="${tool}"]`);
+        if (dropdownItem) {
+            dropdownItem.classList.add('selected');
+        }
+    }
+
+    showToolSelectionFeedback(tool) {
+        const toolInfo = this.availableTools[tool];
+        if (toolInfo) {
+            // Create notification
+            const notification = document.createElement('div');
+            notification.className = 'notification-item notification-slide-in';
+            notification.innerHTML = `
+                <div class="notification-content">
+                    <i class="${toolInfo.icon}"></i>
+                    <span><strong>${toolInfo.name}</strong> selected</span>
+                </div>
+            `;
+            
+            // Add to notification container
+            let notificationContainer = document.getElementById('toolNotification');
+            if (!notificationContainer) {
+                notificationContainer = document.createElement('div');
+                notificationContainer.id = 'toolNotification';
+                notificationContainer.className = 'tool-notification';
+                document.body.appendChild(notificationContainer);
+            }
+            
+            notificationContainer.appendChild(notification);
+            
+            // Remove notification after 2 seconds
+            setTimeout(() => {
+                notification.className = 'notification-item notification-slide-out';
+                setTimeout(() => {
+                    if (notification.parentNode) {
+                        notification.parentNode.removeChild(notification);
+                    }
+                }, 300);
+            }, 2000);
+        }
+    }
+
+    // File Upload Methods
+    handleFileSelection(file) {
+        if (!file) return;
+        
+        if (file.type !== 'application/pdf') {
+            this.showError('Please select a PDF file.');
+            return;
+        }
+        
+        if (file.size > 50 * 1024 * 1024) { // 50MB limit
+            this.showError('File size too large. Maximum 50MB allowed.');
+            return;
+        }
+        
+        this.selectedFile = file;
+        this.showFileIndicator(file);
+        console.log('File selected:', file.name, 'Size:', this.formatFileSize(file.size));
+    }
+
+    showFileIndicator(file) {
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        
+        if (fileName && fileSize) {
+            fileName.textContent = file.name;
+            fileSize.textContent = this.formatFileSize(file.size);
+            this.fileIndicator.style.display = 'flex';
+        }
+        
+        this.updateSendButtonState();
+    }
+
+    removeFile() {
+        this.selectedFile = null;
+        this.fileInput.value = '';
+        this.fileIndicator.style.display = 'none';
+        this.updateSendButtonState();
+    }
+
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
     async sendMessage() {
         const message = this.userInput.value.trim();
-        if (!message || this.isLoading) return;
+        
+        if (!message && !this.selectedFile) return;
+        if (this.isLoading) return;
+
+        // Handle file upload
+        if (this.selectedFile) {
+            await this.handleFileUpload();
+            return;
+        }
 
         // Add user message to chat
         this.addMessage(message, 'user');
@@ -127,6 +409,72 @@ class InvestigationInterface {
             this.hideLoading();
             this.addMessage('Sorry, there was an error processing your request. Please try again.', 'ai');
         }
+    }
+
+    async handleFileUpload() {
+        if (!this.selectedFile) return;
+
+        // Add file upload message to chat
+        this.addMessage(`Uploading and analyzing: ${this.selectedFile.name}`, 'user');
+        
+        // Show loading with PDF step
+        this.showLoading(true);
+        
+        try {
+            const formData = new FormData();
+            formData.append('file', this.selectedFile);
+            formData.append('tool', this.selectedTool);
+
+            const response = await fetch('/api/upload-pdf', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            // Hide loading
+            this.hideLoading();
+            
+            // Add AI response with PDF analysis
+            this.addMessage(this.formatPDFAnalysis(result), 'ai');
+            
+            // Update results panel
+            this.updateResults(result);
+            
+            // Clean up
+            this.removeFile();
+            
+        } catch (error) {
+            console.error('File upload error:', error);
+            this.hideLoading();
+            this.addMessage('Sorry, there was an error processing your PDF file. Please try again.', 'ai');
+        }
+    }
+
+    formatPDFAnalysis(result) {
+        if (result.analysis) {
+            return `
+                <div class="pdf-analysis-result">
+                    <h3>📄 PDF Analysis Complete</h3>
+                    <div class="analysis-summary">
+                        <p><strong>Document:</strong> ${result.filename || 'PDF Document'}</p>
+                        <p><strong>Pages:</strong> ${result.pages || 'N/A'}</p>
+                    </div>
+                    <div class="analysis-content">
+                        <h4>Analysis Results:</h4>
+                        ${typeof result.analysis === 'string' ? 
+                            `<p>${result.analysis}</p>` : 
+                            this.formatStructuredMessage(result.analysis)
+                        }
+                    </div>
+                </div>
+            `;
+        }
+        return result.message || 'PDF analysis completed successfully!';
     }
 
     async investigate(query) {
@@ -233,10 +581,16 @@ class InvestigationInterface {
         this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
     }
 
-    showLoading() {
+    showLoading(isPDF = false) {
         this.isLoading = true;
         this.loadingOverlay.classList.add('active');
         this.updateSendButtonState();
+        
+        // Show PDF step if needed
+        const pdfStep = document.getElementById('step4');
+        if (pdfStep) {
+            pdfStep.style.display = isPDF ? 'flex' : 'none';
+        }
         
         // Animate loading steps
         this.animateLoadingSteps();
@@ -253,21 +607,28 @@ class InvestigationInterface {
         let currentStep = 0;
         
         const interval = setInterval(() => {
+            if (!this.isLoading) {
+                clearInterval(interval);
+                return;
+            }
+            
             steps.forEach((step, index) => {
                 step.classList.remove('active');
             });
             
             if (currentStep < steps.length) {
-                steps[currentStep].classList.add('active');
+                if (steps[currentStep].style.display !== 'none') {
+                    steps[currentStep].classList.add('active');
+                }
                 currentStep++;
             } else {
-                clearInterval(interval);
+                currentStep = 0; // Loop back to start
             }
         }, 1000);
     }
 
     updateResults(response) {
-        if (!response.results) return;
+        if (!response.results && !response.analysis) return;
         
         // Clear empty state
         const emptyState = this.resultsContent.querySelector('.empty-state');
@@ -282,11 +643,11 @@ class InvestigationInterface {
         const timestamp = new Date().toLocaleString();
         resultsContainer.innerHTML = `
             <div class="result-header">
-                <h4>Investigation Results</h4>
+                <h4>${response.analysis ? 'PDF Analysis Results' : 'Investigation Results'}</h4>
                 <span class="result-time">${timestamp}</span>
             </div>
             <div class="result-content">
-                ${this.formatResults(response.results)}
+                ${this.formatResults(response.results || response.analysis)}
             </div>
         `;
         
@@ -325,6 +686,11 @@ class InvestigationInterface {
             </div>
         `;
     }
+
+    showError(message) {
+        console.error(message);
+        this.addMessage(`❌ Error: ${message}`, 'ai');
+    }
 }
 
 // Initialize the interface when DOM is loaded
@@ -340,6 +706,18 @@ document.addEventListener('DOMContentLoaded', () => {
             border-radius: 12px;
             padding: 1rem;
             margin-bottom: 1rem;
+            animation: slideInUp 0.3s ease;
+        }
+        
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .result-header {
@@ -386,4 +764,4 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     `;
     document.head.appendChild(style);
-}); 
+});

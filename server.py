@@ -82,6 +82,26 @@ from server.tool_descriptor import get_tool_description, get_prompt_list
 
 util = UTIL()
 
+
+@app.route('/upload-pdf', methods=['POST'])
+def upload_pdf():
+    """Handle PDF upload and analysis"""
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+    
+    file = request.files['file']
+    analysis_type = request.form.get('analysis_type', 'comprehensive')
+    
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    
+    try:
+        result = util.analyze_pdf(file, analysis_type)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+    
+    
 def request_handler(request):
     try:
         id = request['id'] if 'id' in request else None
@@ -126,6 +146,10 @@ def request_handler(request):
                     query = req['params']['query']
                     ans = util.llm.run(query) # 'util.llm' is the GeminiAgent instance
                     res['results'] = [ans]
+                elif method == "pdf_analysis":
+                    # This would be called from the web interface
+                    # The actual file upload happens via the separate endpoint
+                    res['results'] = [{"message": "Use /upload-pdf endpoint for PDF analysis"}]
                 else:
                     res['results'] = []
                     
@@ -161,4 +185,4 @@ def base():
 
 if __name__ == '__main__':
     load_dotenv()
-    app.run(debug=True, port=5001)
+    app.run(debug=True, port=5000)

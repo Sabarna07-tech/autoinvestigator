@@ -66,7 +66,7 @@
         </div>
         <div class="tools-list">
           <div class="tool-item active" data-tool="all">
-            <i class="fas fa-search"></i>
+            <i class="fas fa-search-plus"></i>
             <span>All Tools</span>
           </div>
           <div class="tool-item" data-tool="financial">
@@ -76,6 +76,10 @@
           <div class="tool-item" data-tool="news">
             <i class="fas fa-newspaper"></i>
             <span>News Analysis</span>
+          </div>
+          <div class="tool-item" data-tool="websearch">
+            <i class="fas fa-globe"></i>
+            <span>Web Search</span>
           </div>
           <div class="tool-item" data-tool="sec">
             <i class="fas fa-file-alt"></i>
@@ -88,6 +92,10 @@
           <div class="tool-item" data-tool="risk">
             <i class="fas fa-shield-alt"></i>
             <span>Risk Assessment</span>
+          </div>
+          <div class="tool-item" data-tool="gemini">
+            <i class="fas fa-brain"></i>
+            <span>AI Analysis</span>
           </div>
         </div>
       </aside>
@@ -125,22 +133,122 @@
                   </li>
                   <li>"What's the market sentiment around cryptocurrency?"</li>
                 </ul>
+                <p>
+                  <strong
+                    >💡 You can also upload PDF reports for analysis!</strong
+                  >
+                </p>
               </div>
               <div class="message-time">Just now</div>
             </div>
           </div>
         </div>
 
-        <!-- Input Area -->
+        <!-- Input Area - UPDATED -->
         <div class="input-area">
+          <!-- File Selected Indicator (hidden by default) -->
+          <div
+            class="file-selected-indicator"
+            id="fileIndicator"
+            style="display: none"
+          >
+            <div class="file-info">
+              <i class="fas fa-file-pdf"></i>
+              <span class="file-name" id="fileName"></span>
+              <span class="file-size" id="fileSize"></span>
+            </div>
+            <button class="remove-file-btn" id="removeFileBtn" type="button">
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
           <div class="input-container">
             <div class="input-wrapper">
+              <!-- Tools Dropdown Button -->
+              <div class="tools-dropdown">
+                <button class="tools-btn" id="toolsBtn" type="button">
+                  <i class="fas fa-plus"></i>
+                  <i class="fas fa-tools tools-icon"></i>
+                  <span>Tools</span>
+                </button>
+
+                <!-- Tools Dropdown Menu -->
+                <div class="tools-dropdown-menu" id="toolsDropdown">
+                  <!-- File Upload Section -->
+                  <div class="tool-category">
+                    <button
+                      class="tool-item file-upload-btn"
+                      id="fileUploadBtn"
+                    >
+                      <i class="fas fa-file-upload"></i>
+                      <span>Add photos & files</span>
+                    </button>
+                  </div>
+
+                  <div class="tool-divider"></div>
+
+                  <!-- Analysis Tools Section -->
+                  <div class="tool-category">
+                    <button class="tool-item" data-tool="all">
+                      <i class="fas fa-search-plus"></i>
+                      <span>All Tools (Deep Research)</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="financial">
+                      <i class="fas fa-chart-line"></i>
+                      <span>Financial Data Analysis</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="news">
+                      <i class="fas fa-newspaper"></i>
+                      <span>News Analysis</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="websearch">
+                      <i class="fas fa-globe"></i>
+                      <span>Web Search</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="sec">
+                      <i class="fas fa-file-alt"></i>
+                      <span>SEC Filings</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="sentiment">
+                      <i class="fas fa-heart"></i>
+                      <span>Sentiment Analysis</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="risk">
+                      <i class="fas fa-shield-alt"></i>
+                      <span>Risk Assessment</span>
+                    </button>
+
+                    <button class="tool-item" data-tool="gemini">
+                      <i class="fas fa-brain"></i>
+                      <span>AI Analysis (Gemini)</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hidden File Input -->
+              <input
+                type="file"
+                id="fileInput"
+                accept=".pdf"
+                style="display: none"
+              />
+
+              <!-- Message Input -->
               <textarea
                 id="userInput"
                 placeholder="Ask about any company, stock, or financial topic..."
                 rows="1"
                 maxlength="1000"
               ></textarea>
+
+              <!-- Send Button -->
               <div class="input-actions">
                 <button class="send-button" id="sendButton" disabled>
                   <i class="fas fa-paper-plane"></i>
@@ -148,7 +256,7 @@
               </div>
             </div>
             <div class="input-footer">
-              <span class="char-count">0/1000</span>
+              <span class="char-count" id="charCount">0/1000</span>
               <span class="input-hint"
                 >Press Enter to send, Shift+Enter for new line</span
               >
@@ -186,21 +294,28 @@
         <h3>Investigating...</h3>
         <p>Gathering data and analyzing information</p>
         <div class="loading-steps">
-          <div class="step active">
+          <div class="step active" id="step1">
             <i class="fas fa-search"></i>
             <span>Searching data sources</span>
           </div>
-          <div class="step">
+          <div class="step" id="step2">
             <i class="fas fa-chart-line"></i>
             <span>Analyzing financial data</span>
           </div>
-          <div class="step">
+          <div class="step" id="step3">
             <i class="fas fa-brain"></i>
             <span>Processing with AI</span>
+          </div>
+          <div class="step" id="step4" style="display: none">
+            <i class="fas fa-file-pdf"></i>
+            <span>Processing PDF document</span>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Tool Selection Notification Area -->
+    <div id="toolNotification" class="tool-notification"></div>
 
     <script src="{{ url_for('static', filename='js/investigate.js') }}"></script>
   </body>

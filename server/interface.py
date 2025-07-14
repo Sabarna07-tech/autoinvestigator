@@ -6,7 +6,7 @@ from server.tools.news_scanner import NewsScannerTool
 from server.tools.mail_sender import MailSender
 from server.tools.string_to_json import string_to_json
 from server.tools.gemini import GeminiAgent
-
+from server.tools.pdf_reader import analyze_pdf_report
 
 class UTIL:
     def __init__(self):
@@ -38,3 +38,20 @@ class UTIL:
     def send_mail(self, subject:str, message:str, receiver:str):
         return self.mail_sender.sendMail(subject=subject, message=message, dest=receiver)       
             
+    def analyze_pdf(self, file_input, analysis_type="comprehensive"):
+        """
+        Analyze uploaded PDF report
+        
+        Args:
+            file_input: Flask FileStorage object
+            analysis_type: 'comprehensive', 'financial', or 'summary'
+        """
+        try:
+            result = analyze_pdf_report(file_input, analysis_type)
+            return result
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f"PDF analysis failed: {str(e)}",
+                'analysis': None
+            }
