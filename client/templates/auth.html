@@ -3,10 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>
-      {% if mode == 'signup' %}Sign Up{% else %}Sign In{% endif %} -
-      AutoInvestigator
-    </title>
+    <title>Login / Signup - AutoInvestigator</title>
     <link
       rel="icon"
       type="image/svg+xml"
@@ -26,16 +23,19 @@
         background: rgba(255, 255, 255, 0.04);
         border-radius: 24px;
         box-shadow: 0 8px 40px rgba(102, 126, 234, 0.1);
-        padding: 2.5rem 2rem 2rem 2rem;
+        padding: 2.5rem;
         position: relative;
         z-index: 2;
       }
-      .auth-tabs {
+      .form-toggle {
         display: flex;
         justify-content: center;
         margin-bottom: 2rem;
+        border-radius: 12px;
+        background-color: rgba(255, 255, 255, 0.05);
+        padding: 4px;
       }
-      .auth-tab {
+      .toggle-btn {
         flex: 1;
         text-align: center;
         padding: 0.75rem 0;
@@ -43,14 +43,21 @@
         color: #a0a0a0;
         background: none;
         border: none;
-        border-bottom: 2px solid transparent;
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         cursor: pointer;
-        transition: color 0.2s, border-color 0.2s;
+        transition: all 0.3s ease;
+        border-radius: 10px;
       }
-      .auth-tab.active {
-        color: #667eea;
-        border-bottom: 2.5px solid #667eea;
+      .toggle-btn.active {
+        color: #fff;
+        background: #667eea;
+        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.3);
+      }
+      .form-section {
+        display: none;
+      }
+      .form-section.active {
+        display: block;
       }
       .auth-title {
         text-align: center;
@@ -72,12 +79,13 @@
         color: #fff;
         font-size: 1rem;
         outline: none;
-        transition: border 0.2s;
+        transition: border 0.2s, box-shadow 0.2s;
       }
       .auth-form input:focus {
-        border: 1.5px solid #667eea;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
       }
-      .auth-form button[type="submit"] {
+      .btn-submit {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #fff;
         font-weight: 600;
@@ -87,128 +95,146 @@
         font-size: 1.1rem;
         cursor: pointer;
         margin-top: 0.5rem;
-        transition: background 0.2s, box-shadow 0.2s;
+        transition: all 0.3s ease;
       }
-      .auth-form button[type="submit"]:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
+      .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.25);
       }
-      .divider {
+      .flash-message {
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        color: #fff;
         text-align: center;
-        color: #a0a0a0;
-        margin: 1.5rem 0 1rem 0;
-        position: relative;
       }
-      .divider:before,
-      .divider:after {
-        content: "";
-        display: inline-block;
-        width: 40%;
-        height: 1px;
-        background: #222;
-        vertical-align: middle;
-        margin: 0 0.5rem;
+      .flash-message.warning {
+        background-color: rgba(255, 193, 7, 0.7);
       }
-      .google-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.7rem;
-        background: #fff;
-        color: #222;
-        font-weight: 600;
-        border: none;
-        border-radius: 10px;
-        padding: 0.9rem 1rem;
-        font-size: 1.05rem;
-        cursor: pointer;
-        box-shadow: 0 2px 10px rgba(102, 126, 234, 0.08);
-        transition: background 0.2s, box-shadow 0.2s;
+      .flash-message.danger {
+        background-color: rgba(220, 53, 69, 0.7);
       }
-      .google-btn:hover {
-        background: #f5f5f5;
-        box-shadow: 0 4px 20px rgba(102, 126, 234, 0.1);
-      }
-      .google-icon {
-        width: 22px;
-        height: 22px;
-      }
-      .auth-footer {
-        text-align: center;
-        margin-top: 1.5rem;
-        color: #a0a0a0;
-        font-size: 0.95rem;
-      }
-      .auth-footer a {
-        color: #667eea;
-        text-decoration: none;
-        font-weight: 500;
-      }
-      .auth-footer a:hover {
-        text-decoration: underline;
+      .flash-message.success {
+        background-color: rgba(40, 167, 69, 0.7);
       }
     </style>
   </head>
   <body>
     <div class="auth-container">
-      <div class="auth-tabs">
-        <a
-          href="{{ url_for('auth.login') }}"
-          class="auth-tab{% if mode == 'login' %} active{% endif %}"
-          >Sign In</a
+      <!-- Flash Messages -->
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %} {% for category, message in messages %}
+      <div class="flash-message {{ category }}">{{ message }}</div>
+      {% endfor %} {% endif %} {% endwith %}
+
+      <div class="form-toggle">
+        <button
+          id="login-toggle"
+          class="toggle-btn active"
+          onclick="showForm('login')"
         >
-        <a
-          href="{{ url_for('auth.signup') }}"
-          class="auth-tab{% if mode == 'signup' %} active{% endif %}"
-          >Sign Up</a
-        >
-      </div>
-      <div class="auth-title">
-        {% if mode == 'signup' %}Create Account{% else %}Welcome Back{% endif %}
-      </div>
-      <form class="auth-form" method="POST" action="">
-        <input
-          type="email"
-          name="email"
-          placeholder="Email address"
-          required
-          autocomplete="email"
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          required
-          autocomplete="current-password"
-        />
-        {% if mode == 'signup' %}
-        <input
-          type="password"
-          name="confirm_password"
-          placeholder="Confirm Password"
-          required
-          autocomplete="new-password"
-        />
-        {% endif %}
-        <button type="submit">
-          {% if mode == 'signup' %}Sign Up{% else %}Sign In{% endif %}
+          Sign In
         </button>
-      </form>
-      <div class="divider">or</div>
-      <a href="{{ url_for('auth.google_login') }}" class="google-btn">
-        <img
-          src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/google/google-original.svg"
-          alt="Google"
-          class="google-icon"
-        />
-        Continue with Google
-      </a>
-      <div class="auth-footer">
-        {% if mode == 'signup' %} Already have an account?
-        <a href="{{ url_for('auth.login') }}">Sign In</a> {% else %} Don't have
-        an account? <a href="{{ url_for('auth.signup') }}">Sign Up</a>
-        {% endif %}
+        <button
+          id="signup-toggle"
+          class="toggle-btn"
+          onclick="showForm('signup')"
+        >
+          Sign Up
+        </button>
+      </div>
+
+      <!-- Login Form -->
+      <div id="login-form" class="form-section active">
+        <h2 class="auth-title">Welcome Back</h2>
+        <form
+          class="auth-form"
+          method="POST"
+          action="{{ url_for('auth.login') }}"
+        >
+          <input
+            type="email"
+            name="email"
+            placeholder="Email address"
+            required
+            autocomplete="email"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            autocomplete="current-password"
+          />
+          <button type="submit" class="btn-submit">Sign In</button>
+        </form>
+      </div>
+
+      <!-- Signup Form -->
+      <div id="signup-form" class="form-section">
+        <h2 class="auth-title">Create Account</h2>
+        <form
+          class="auth-form"
+          method="POST"
+          action="{{ url_for('auth.signup') }}"
+        >
+          <input
+            type="text"
+            name="name"
+            placeholder="Full Name"
+            required
+            autocomplete="name"
+          />
+          <input
+            type="email"
+            name="email"
+            placeholder="Email address"
+            required
+            autocomplete="email"
+          />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            required
+            autocomplete="new-password"
+          />
+          <button type="submit" class="btn-submit">Sign Up</button>
+        </form>
       </div>
     </div>
+
+    <script>
+      function showForm(formName) {
+        const loginForm = document.getElementById("login-form");
+        const signupForm = document.getElementById("signup-form");
+        const loginToggle = document.getElementById("login-toggle");
+        const signupToggle = document.getElementById("signup-toggle");
+
+        if (formName === "login") {
+          loginForm.classList.add("active");
+          signupForm.classList.remove("active");
+          loginToggle.classList.add("active");
+          signupToggle.classList.remove("active");
+        } else {
+          loginForm.classList.remove("active");
+          signupForm.classList.add("active");
+          loginToggle.classList.remove("active");
+          signupToggle.classList.add("active");
+        }
+      }
+
+      // Check if the user was redirected from a failed signup attempt
+      // and show the signup form by default in that case.
+      document.addEventListener("DOMContentLoaded", function () {
+        // This checks if the previous page was the signup page and if there's an error message.
+        if (
+          document.referrer.endsWith("/auth/signup") &&
+          document.querySelector(".flash-message.danger")
+        ) {
+          showForm("signup");
+        }
+      });
+    </script>
   </body>
 </html>

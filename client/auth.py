@@ -1,116 +1,95 @@
-from flask import Blueprint, render_template, redirect, url_for, session, flash, request
-from flask_dance.contrib.google import make_google_blueprint, google
-from flask import current_app as app
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user, UserMixin
-import os
-from client.models import db, User
+from flask import Blueprint, request, render_template, redirect, url_for, flash
+from werkzeug.security import generate_password_hash, check_password_hash
+from flask_login import login_user, logout_user, login_required, current_user
+import random
+import string
 
-# Flask Blueprint for auth
-auth_bp = Blueprint('auth', __name__, template_folder='templates')
+# Import 'db' directly from the client package (__init__.py)
+# Import 'User' from the models module
+from . import db
+from .models import User
 
-# Google OAuth blueprint (register with Flask app in web_app.py)
-google_bp = make_google_blueprint(
-    client_id=os.environ.get('GOOGLE_OAUTH_CLIENT_ID', 'your-google-client-id'),
-    client_secret=os.environ.get('GOOGLE_OAUTH_CLIENT_SECRET', 'your-google-client-secret'),
-    scope=["profile", "email"],
-    redirect_url="/auth/google_callback"
-)
+# Import the mail sending utility from the server package
+from server.tools.mail_sender import send_verification_email
 
-# Flask-Login setup
-login_manager = LoginManager()
-login_manager.login_view = 'auth.login'
+# Create a Blueprint for authentication routes, with a URL prefix
+auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-class UserLogin(UserMixin, User):
-    pass
-
-@login_manager.user_loader
-def load_user(user_id):
-    return User.query.get(int(user_id))
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    """Handles user login."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.investigate_page'))
+
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
+
         user = User.query.filter_by(email=email).first()
-        if user and user.password_hash and user.check_password(password):
-            login_user(user)
-            session['user'] = {
-                'email': user.email,
-                'name': user.name,
-                'picture': user.picture,
-                'google_id': user.google_id
-            }
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('landing_page'))
-        else:
-            flash('Invalid email or password.', 'danger')
-    return render_template('auth.html', mode='login')
+
+        if not user or not check_password_hash(user.password, password):
+            flash('Invalid email or password. Please try again.', 'danger')
+            return redirect(url_for('auth.login'))
+
+        if not user.is_verified:
+            flash('Your account is not verified. Please check your email for the verification code.', 'warning')
+            return redirect(url_for('main.verify'))
+
+        login_user(user)
+        return redirect(url_for('main.investigate_page'))
+
+    # For a GET request, render the auth template
+    return render_template('auth.html')
+
 
 @auth_bp.route('/signup', methods=['GET', 'POST'])
 def signup():
+    """Handles new user registration."""
+    if current_user.is_authenticated:
+        return redirect(url_for('main.investigate_page'))
+
     if request.method == 'POST':
         email = request.form.get('email')
+        name = request.form.get('name')
         password = request.form.get('password')
-        confirm_password = request.form.get('confirm_password')
-        name = email.split('@')[0]
-        if password != confirm_password:
-            flash('Passwords do not match.', 'danger')
-        elif User.query.filter_by(email=email).first():
-            flash('Email already registered. Please sign in.', 'warning')
-        else:
-            user = User(email=email, name=name)
-            user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            session['user'] = {
-                'email': user.email,
-                'name': user.name,
-                'picture': user.picture,
-                'google_id': user.google_id
-            }
-            flash('Account created successfully!', 'success')
-            return redirect(url_for('landing_page'))
-    return render_template('auth.html', mode='signup')
+
+        user = User.query.filter_by(email=email).first()
+        if user:
+            flash('An account with this email address already exists.', 'danger')
+            return redirect(url_for('auth.signup'))
+
+        verification_code = ''.join(random.choices(string.digits, k=6))
+
+        new_user = User(
+            email=email,
+            name=name,
+            password=generate_password_hash(password, method='pbkdf2:sha256'),
+            verification_code=verification_code,
+            is_verified=False
+        )
+
+        db.session.add(new_user)
+        db.session.commit()
+
+        try:
+            send_verification_email(new_user.email, verification_code)
+            flash('Registration successful! Please check your email for a verification code.', 'success')
+        except Exception as e:
+            print(f"Error sending signup email: {e}")
+            flash('Registration successful, but the verification email could not be sent.', 'warning')
+
+        # Redirect to the verification page after signup
+        return redirect(url_for('main.verify'))
+
+    # For a GET request, render the auth template
+    return render_template('auth.html')
+
 
 @auth_bp.route('/logout')
+@login_required
 def logout():
+    """Handles user logout."""
     logout_user()
-    session.clear()
-    flash('You have been logged out.', 'info')
+    flash('You have been logged out.', 'success')
     return redirect(url_for('auth.login'))
-
-@auth_bp.route('/google_login')
-def google_login():
-    if not google.authorized:
-        return redirect(url_for('google.login'))
-    resp = google.get('/oauth2/v2/userinfo')
-    if resp.ok:
-        user_info = resp.json()
-        # Find or create user in DB
-        user = User.query.filter_by(email=user_info['email']).first()
-        if not user:
-            user = User(
-                email=user_info['email'],
-                name=user_info.get('name'),
-                google_id=user_info.get('id'),
-                picture=user_info.get('picture')
-            )
-            db.session.add(user)
-            db.session.commit()
-        login_user(user)
-        session['user'] = {
-            'email': user.email,
-            'name': user.name,
-            'picture': user.picture,
-            'google_id': user.google_id
-        }
-        return redirect(url_for('landing_page'))
-    flash('Failed to log in with Google.', 'danger')
-    return redirect(url_for('auth.login'))
-
-@auth_bp.route('/google_callback')
-def google_callback():
-    # This route is handled by flask-dance
-    return redirect(url_for('auth.google_login')) 

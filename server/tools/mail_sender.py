@@ -1,82 +1,127 @@
 import smtplib
 from dotenv import load_dotenv
 import os
-from email.message import EmailMessage # Import EmailMessage
+from email.message import EmailMessage
 
+# Load environment variables from a .env file
 load_dotenv()
 
 class MailSender:
     """
-    This class is a utility class that sends mail to the receivers
+    This class is a utility class that sends mail to the receivers using smtplib.
 
     Functions:
-    sendMail(subject:str, message:str, dest:str) -> sends mail to a destination mail
-    sendMailBatch(subject:str, message:str, dests:list) -> sends mail to multiple receivers
+    - sendMail(subject:str, message:str, dest:str) -> sends mail to a destination mail.
+    - sendMailBatch(subject:str, message:str, dests:list) -> sends mail to multiple receivers.
     """
     def __init__(self):
+        """
+        Initializes the SMTP connection.
+        """
         try:
+            # Fetch credentials from environment variables
             self.__sender_mail = os.getenv("SENDER_MAIL")
             self.__pass = os.getenv("MAIL_PASS")
+
+            # Validate that credentials are set
+            if not self.__sender_mail or not self.__pass:
+                raise ValueError("SENDER_MAIL and MAIL_PASS must be set in the .env file")
+
+            # Establish a connection to the SMTP server
             self.sender = smtplib.SMTP('smtp.gmail.com', 587)
             self.sender.starttls()
-            self.sender.login(self.__sender_mail,self.__pass)
+            self.sender.login(self.__sender_mail, self.__pass)
         except Exception as e:
-            print("Error occurred : \n",e)
-            raise e
+            print(f"Error occurred during MailSender initialization: {e}")
+            raise
 
-    def sendMail(self, subject:str, message:str, dest:str)->bool:
+    def sendMail(self, subject: str, message: str, dest: str) -> bool:
         """
-        Sends message to a particular receiver with a subject
+        Sends a message to a particular receiver with a subject.
 
         Args:
-            subject : subject of the email
-            message : message to be send
-            dest : receiver's email id
+            subject (str): The subject of the email.
+            message (str): The message to be sent.
+            dest (str): The receiver's email id.
+
         Returns:
-            bool : True, on success False, on failure
+            bool: True on success, False on failure.
         """
         try:
             msg = EmailMessage()
             msg['Subject'] = subject
             msg['From'] = self.__sender_mail
             msg['To'] = dest
-            msg.set_content(message) # Set the plain text content
+            msg.set_content(message)  # Set the plain text content
 
-            self.sender.sendmail(self.__sender_mail, dest, msg.as_string())
+            self.sender.send_message(msg)
             return True
         except Exception as e:
-            print("Something went wrong :\n",e)
-            raise e
+            print(f"Something went wrong while sending mail to {dest}: {e}")
+            # Corrected: removed raise e to prevent crash and allow return
             return False
 
-    def sendMailBatch(self, subject:str, message:str, dests:list)->int:
+    def sendMailBatch(self, subject: str, message: str, dests: list) -> int:
         """
-        Sends mail to a list on receivers with a subject
+        Sends mail to a list of receivers with a subject.
 
         Args:
-            subject : subject of the email
-            message : message to be send
-            dests : list receivers email ids
+            subject (str): The subject of the email.
+            message (str): The message to be sent.
+            dests (list): A list of receiver email ids.
+
         Returns:
-            int : number of successfully sent emails
+            int: The number of successfully sent emails.
         """
-        nums = 0
+        success_count = 0
         for dest in dests:
             if self.sendMail(subject, message, dest):
-                nums+=1
-        return nums
+                success_count += 1
+        return success_count
 
     def __del__(self):
-        # Ensure the sender object exists before trying to quit
+        """
+        Destructor to close the SMTP connection gracefully.
+        """
         if hasattr(self, 'sender') and self.sender:
-            self.sender.quit()
+            try:
+                self.sender.quit()
+            except Exception as e:
+                print(f"Error occurred while quitting SMTP connection: {e}")
+
+# --- Integration Helper Function ---
+
+# Instantiate the sender once to be used by the application
+mailer = MailSender()
+
+def send_verification_email(email: str, verification_code: str):
+    """
+    Sends a verification email to the user with the provided verification code.
+    This function uses the MailSender class to dispatch the email.
+    """
+    subject = "Your Verification Code"
+    body = f"Thank you for registering. Your verification code is: {verification_code}"
+    mailer.sendMail(subject, body, email)
 
 
-if __name__=='__main__':
-    sender = MailSender()
-    # Example usage with subject
-    msg = """dear segomarani,\n\nHere's an update on some of the major conflicts currently happening around the world:\n\n1.  **Russia-Ukraine War:** This conflict, which began in February 2022, continues to be a major point of tension in Eastern Europe.\n\n2.  **Israel-Gaza Conflict:** The situation in Gaza remains highly volatile following a Hamas-led attack in October 2023, with significant humanitarian concerns.\n\n3.  **Sudanese Civil War:** A brutal power struggle erupted in April 2023 between the Sudanese Armed Forces (SAF) and the paramilitary Rapid Support Forces (RSF), leading to a massive displacement crisis.\n\n4.  **Myanmar Civil War:** Since the 2021 military coup, Myanmar has been embroiled in a violent conflict between ethnic armed groups, pro-democracy forces, and the junta.\n\n5.  **Yemeni Civil War:** What began in 2014 as a power struggle has evolved into a regional proxy war, causing immense human suffering.\n\n6.  **Sahel Insurgency:** Parts of West Africa, including Mali, Burkina Faso, and Niger, are experiencing chaotic situations with various militant groups, leading to displacement and instability.\n\n7.  **Ethiopian Civil Conflict:** Despite a peace deal in the Tigray region, tensions and sporadic fighting persist in other parts of Ethiopia.\n\n8.  **Haiti Gang Violence:** Haiti is facing severe challenges due to unchecked gang rule, leading to widespread violence and a breakdown of law and order.\n\nPlease note that this is not an exhaustive list, and the situations are constantly evolving.\n\nSincerely,\nYour AI Assistant"""
-    sender.sendMail(subject="Manusher Aukat", message=msg, dest="sabarna.saha1308@gmail.com")
-    # Example usage for batch sending
-    # sender.sendMailBatch(subject="Batch Test", message="Hello to all!", dests=["recipient1@example.com", "recipient2@example.com"])
-    del sender
+# Example of how the class would be used for testing purposes
+if __name__ == '__main__':
+    print("Running MailSender test...")
+    # Ensure you have a .env file with SENDER_MAIL and MAIL_PASS for this to work
+    try:
+        test_mailer = MailSender()
+        subject = "Test Email from AutoInvestigator"
+        msg = "This is a test email to confirm the MailSender class is working."
+        # Replace with a real email address for testing
+        test_recipient = "example@gmail.com"
+        
+        print(f"Sending test email to {test_recipient}...")
+        if test_mailer.sendMail(subject=subject, message=msg, dest=test_recipient):
+            print("Test email sent successfully!")
+        else:
+            print("Failed to send test email.")
+            
+        del test_mailer # Clean up the connection
+        
+    except Exception as e:
+        print(f"An error occurred during the test: {e}")
