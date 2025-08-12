@@ -11,29 +11,61 @@ AutoInvestigator is an agentic AI system built using the MCP Server + MCP Client
 ## Architecture
 
 ```mermaid
-graph TD
-    User(["User"]) -->|"Query / File Upload"| Client["MCP Client\n(Flask Web App)"]
-    Client -->|"HTTP JSON /\requests"| Server["MCP Server\nFlask API"]
-    Server -->|"Dispatch"| Util["UTIL Orchestrator"]
-    Util --> Tools["Tools\nweb_search\nfinancial_data\nnews\npdf_reader\nmail\nGemini LLM"]
-    Tools --> External["External APIs, Web, Mail, LLM"]
-    External --> Tools
-    Tools --> Util
-    Util --> Server
-    Server -->|"JSON results"| Client
-    Client -->|"Render in UI"| User
+flowchart LR
+    %% Client Side
+    subgraph C["MCP Client\n(Flask Web App)"]
+        UI["HTML/JS Frontend"]
+        Auth["Auth & Session\nFlask-Login"]
+        Req["Request Builder"]
+        DB[("SQLite User DB")]
+        UI --> Auth
+        UI --> Req
+        Auth --> DB
+    end
 
-    Client --- Shared["Shared Utilities"]
-    Server --- Shared
+    %% Server Side
+    subgraph S["MCP Server\nFlask API"]
+        API["/requests endpoint"]
+        Handler["Request Parser"]
+        Orchestrator["UTIL Orchestrator"]
+        subgraph T["Tools"]
+            Web["Web Search"]
+            Fin["Financial Data"]
+            News["News Scanner"]
+            PDF["PDF Analyzer"]
+            Mail["Mail Sender"]
+            LLM["Gemini LLM"]
+        end
+        API --> Handler --> Orchestrator
+        Orchestrator --> Web & Fin & News & PDF & Mail & LLM
+    end
+
+    %% External and Shared
+    Ext["External APIs / Web / Mail / LLM"]
+    T --> Ext
+    Ext --> T
+    C -->|"HTTP JSON"| API
+    Orchestrator -->|"Results"| Handler
+    Handler -->|"JSON"| C
+    C --- Shared["Shared Config & Utils"]
+    S --- Shared
 ```
 
-The user interacts with the **MCP Client**, a Flask-based web interface that
-handles authentication, verification, and investigative queries. Requests are
-sent as structured JSON to the **MCP Server**, which routes them through the
-`UTIL` orchestrator. This component invokes specialized tools—such as web
-search, financial data retrieval, news scanning, PDF analysis, email
-notifications, and a Gemini-powered LLM—to gather external information. Results
-flow back through the server to the client interface, where they are presented
-to the user. Shared utilities provide configuration and helpers used across
-both sides of the system.
+The user interacts with the **MCP Client**, which combines a browser-based UI,
+authentication powered by Flask-Login, and a small request builder that shapes
+investigation tasks into the JSON format expected by the server. User
+credentials and session data live in a local SQLite database.
+
+Requests are POSTed to the server's `/requests` endpoint where a parser unwraps
+each request and passes it to the `UTIL` orchestrator. `UTIL` dispatches calls
+to individual tools: web search, financial data retrieval, news scanning,
+PDF report analysis, email notifications, and a Gemini-based LLM. Tools reach
+out to external APIs, the web, or mail services as needed and send their
+responses back through `UTIL`.
+
+The server also exposes an `/upload-pdf` route for direct document analysis.
+All results are aggregated into a JSON response and returned to the client for
+rendering. Configuration values and helper utilities in the `shared` package
+are imported on both sides to provide consistent settings and common
+functionality throughout the system.
 
