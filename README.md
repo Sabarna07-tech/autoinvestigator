@@ -7,3 +7,65 @@ AutoInvestigator is an agentic AI system built using the MCP Server + MCP Client
 - **MCP Client**: Coordinates multi-agent workflows that accomplish tasks like risk profiling, news analysis, and financial insight.
 - **Shared**: Utilities and configurations.
 - **Data**: Stores cache and generated reports.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    %% Client Side
+    subgraph C["MCP Client\n(Flask Web App)"]
+        UI["HTML/JS Frontend"]
+        Auth["Auth & Session\nFlask-Login"]
+        Req["Request Builder"]
+        DB[("SQLite User DB")]
+        UI --> Auth
+        UI --> Req
+        Auth --> DB
+    end
+
+    %% Server Side
+    subgraph S["MCP Server\nFlask API"]
+        API["/requests endpoint"]
+        Handler["Request Parser"]
+        Orchestrator["UTIL Orchestrator"]
+        subgraph T["Tools"]
+            Web["Web Search"]
+            Fin["Financial Data"]
+            News["News Scanner"]
+            PDF["PDF Analyzer"]
+            Mail["Mail Sender"]
+            LLM["Gemini LLM"]
+        end
+        API --> Handler --> Orchestrator
+        Orchestrator --> Web & Fin & News & PDF & Mail & LLM
+    end
+
+    %% External and Shared
+    Ext["External APIs / Web / Mail / LLM"]
+    T --> Ext
+    Ext --> T
+    C -->|"HTTP JSON"| API
+    Orchestrator -->|"Results"| Handler
+    Handler -->|"JSON"| C
+    C --- Shared["Shared Config & Utils"]
+    S --- Shared
+```
+
+The user interacts with the **MCP Client**, which combines a browser-based UI,
+authentication powered by Flask-Login, and a small request builder that shapes
+investigation tasks into the JSON format expected by the server. User
+credentials and session data live in a local SQLite database.
+
+Requests are POSTed to the server's `/requests` endpoint where a parser unwraps
+each request and passes it to the `UTIL` orchestrator. `UTIL` dispatches calls
+to individual tools: web search, financial data retrieval, news scanning,
+PDF report analysis, email notifications, and a Gemini-based LLM. Tools reach
+out to external APIs, the web, or mail services as needed and send their
+responses back through `UTIL`.
+
+The server also exposes an `/upload-pdf` route for direct document analysis.
+All results are aggregated into a JSON response and returned to the client for
+rendering. Configuration values and helper utilities in the `shared` package
+are imported on both sides to provide consistent settings and common
+functionality throughout the system.
+
