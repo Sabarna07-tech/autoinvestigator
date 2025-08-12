@@ -1,0 +1,13 @@
+{
+  "name": "host-app",
+  "version": "1.0.0",
+  "description": "MCP Host Application",
+  "main": "src/main.ts",
+  "scripts": {
+    "start": "ts-node src/main.ts"
+  },
+  "dependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.3"
+  }
+}

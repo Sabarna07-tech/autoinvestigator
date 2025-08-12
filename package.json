@@ -1,0 +1,12 @@
+{
+  "name": "mcp-architecture-study",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "host": "yarn workspace host-app start",
+    "server": "yarn workspace server-mcp start"
+  }
+}

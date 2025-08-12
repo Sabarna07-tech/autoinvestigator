@@ -1,0 +1,8 @@
+{
+  "name": "client-mcp",
+  "version": "1.0.0",
+  "description": "MCP Client",
+  "main": "src/index.ts",
+  "scripts": {},
+  "dependencies": {}
+}
