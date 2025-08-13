@@ -3,6 +3,13 @@ from flask_login import current_user, login_required
 import time
 import random
 import string
+import uuid
+import requests
+from urllib.parse import urljoin
+
+from client.config import SERVER_URL
+
+SERVER_BASE_URL = SERVER_URL.rsplit('/', 1)[0]
 
 # Corrected imports:
 # Import 'db' directly from the client package (__init__.py)
@@ -98,7 +105,7 @@ def resend_verification():
 @main_bp.route('/api/investigate', methods=['POST'])
 @login_required
 def investigate():
-    """API endpoint for running investigations."""
+    """API endpoint for running investigations via the MCP server."""
     if not current_user.is_verified:
         return jsonify({'error': 'Email not verified.'}), 403
 
@@ -110,16 +117,70 @@ def investigate():
         if not user_query:
             return jsonify({'error': 'No query provided'}), 400
 
-        # Placeholder for actual agent call
+        tool_map = {
+            'financial': ('financial_descriptor', {'ticker': user_query, 'cik': 'Unknown'}),
+            'news': ('news', {'name': user_query}),
+            'websearch': ('websearch', {'query': user_query}),
+            'gemini': ('gemini', {'query': user_query}),
+            'all': ('gemini', {'query': user_query}),
+        }
+
+        method, params = tool_map.get(selected_tool, ('gemini', {'query': user_query}))
+
+        payload = {
+            'id': f'client-{uuid.uuid4()}',
+            'requests': [
+                {
+                    'id': f'req-{uuid.uuid4()}',
+                    'method': f'tools/{method}',
+                    'params': params,
+                }
+            ]
+        }
+
+        server_resp = requests.post(SERVER_URL, json=payload)
+        server_resp.raise_for_status()
+        server_json = server_resp.json()
+
+        result_text = ''
+        results_list = server_json.get('results', [])
+        if results_list:
+            result_text = results_list[0].get('results', [''])[0]
+
         response_data = {
             'status': 'success',
-            'message': f'Investigation completed for: {user_query}',
-            'results': {'summary': f'Results for {user_query} are ready.'},
+            'message': result_text,
+            'results': result_text,
             'tool_used': selected_tool,
-            'timestamp': time.time()
+            'timestamp': time.time(),
         }
         return jsonify(response_data)
 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/upload-pdf', methods=['POST'])
+@login_required
+def upload_pdf():
+    """Proxy PDF analysis requests to the MCP server."""
+    if not current_user.is_verified:
+        return jsonify({'error': 'Email not verified.'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    analysis_type = request.form.get('analysis_type', 'comprehensive')
+
+    files = {'file': (file.filename, file.stream, file.mimetype)}
+    data = {'analysis_type': analysis_type}
+
+    try:
+        server_url = urljoin(SERVER_BASE_URL + '/', 'upload-pdf')
+        resp = requests.post(server_url, files=files, data=data)
+        resp.raise_for_status()
+        return jsonify(resp.json())
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
