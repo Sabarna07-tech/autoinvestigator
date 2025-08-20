@@ -1,5 +1,6 @@
-from flask import Flask,request,jsonify
+from flask import Flask, request, jsonify
 from dotenv import load_dotenv
+import os
 
 
 app=Flask(__name__)
@@ -170,8 +171,8 @@ def request_handler(request):
             response['results'].append(res)
         return response
     except Exception as e:
-        raise e
-        return {"message":"Bad Request. Please check the format"}
+        print(f"[request_handler] Error processing request: {e}")
+        return {"message": "Bad Request. Please check the format", "error": str(e)}
 
 
 @app.route('/requests',methods=['POST'])
@@ -185,4 +186,5 @@ def base():
 
 if __name__ == '__main__':
     load_dotenv()
-    app.run(debug=True, port=5000)
+    port = int(os.getenv('SERVER_PORT', 8000))
+    app.run(debug=True, port=port)
