@@ -50,6 +50,7 @@ class InvestigationInterface {
         this.initializeElements();
         this.initializeEventListeners();
         this.initializeAutoResize();
+        this.loadChatHistory();
     }
 
     initializeElements() {
@@ -148,6 +149,19 @@ class InvestigationInterface {
 
     initializeAutoResize() {
         this.autoResize();
+    }
+
+    async loadChatHistory() {
+        try {
+            const resp = await fetch('/api/chat-history');
+            if (!resp.ok) return;
+            const history = await resp.json();
+            history.forEach(msg => {
+                this.addMessage(msg.message, msg.role, msg.timestamp);
+            });
+        } catch (err) {
+            console.error('Failed to load chat history:', err);
+        }
     }
 
     autoResize() {
@@ -496,7 +510,7 @@ class InvestigationInterface {
         return await response.json();
     }
 
-    addMessage(text, sender) {
+    addMessage(text, sender, timestamp = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
         
@@ -522,7 +536,9 @@ class InvestigationInterface {
         
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
-        messageTime.textContent = this.getCurrentTime();
+        messageTime.textContent = timestamp
+            ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            : this.getCurrentTime();
         
         content.appendChild(messageText);
         content.appendChild(messageTime);

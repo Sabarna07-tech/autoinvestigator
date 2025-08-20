@@ -15,7 +15,7 @@ SERVER_BASE_URL = SERVER_URL.rsplit('/', 1)[0]
 # Import 'db' directly from the client package (__init__.py)
 # Import 'User' from the models module
 from . import db
-from .models import User
+from .models import User, ChatMessage
 
 # Import the mail sending utility
 from server.tools.mail_sender import send_verification_email
@@ -147,17 +147,52 @@ def investigate():
         if results_list:
             result_text = results_list[0].get('results', [''])[0]
 
+        # Generate a short summary for the chat history while preserving
+        # the full results for the side panel
+        summary = (result_text[:200].strip() + '...') if len(result_text) > 200 else result_text
+
         response_data = {
             'status': 'success',
-            'message': result_text,
+            'message': summary or 'Investigation completed successfully.',
             'results': result_text,
             'tool_used': selected_tool,
             'timestamp': time.time(),
         }
+
+        # Persist chat messages for this user
+        try:
+            db.session.add(ChatMessage(user_id=current_user.id, role='user', message=user_query))
+            db.session.add(ChatMessage(user_id=current_user.id, role='ai', message=summary))
+            db.session.commit()
+        except Exception as db_err:
+            db.session.rollback()
+            print(f"Error saving chat message: {db_err}")
+
         return jsonify(response_data)
 
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+@main_bp.route('/api/chat-history', methods=['GET'])
+@login_required
+def chat_history():
+    """Return saved chat messages for the current user."""
+    messages = (
+        ChatMessage.query
+        .filter_by(user_id=current_user.id)
+        .order_by(ChatMessage.timestamp.asc())
+        .all()
+    )
+    history = [
+        {
+            'role': m.role,
+            'message': m.message,
+            'timestamp': m.timestamp.isoformat(),
+        }
+        for m in messages
+    ]
+    return jsonify(history)
 
 
 @main_bp.route('/api/upload-pdf', methods=['POST'])
