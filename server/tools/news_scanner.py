@@ -2,8 +2,6 @@
 
 from duckduckgo_search import DDGS
 from shared.config import REGION,SAFE_SEARCH, TIME_LIMIT, MAX_RESULTS
-from server.tools.web_search import WebSearchTool
-
 from .web_search import WebSearchTool
 
 class NewsScannerTool:

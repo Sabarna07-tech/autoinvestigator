@@ -50,6 +50,7 @@ class InvestigationInterface {
         this.initializeElements();
         this.initializeEventListeners();
         this.initializeAutoResize();
+        this.loadChatHistory();
     }
 
     initializeElements() {
@@ -148,6 +149,27 @@ class InvestigationInterface {
 
     initializeAutoResize() {
         this.autoResize();
+    }
+
+    async loadChatHistory() {
+        try {
+            const resp = await fetch('/api/history');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            let lastResults = null;
+            data.forEach(msg => {
+                this.addMessage(msg.content, msg.role, msg.timestamp);
+                if (msg.role === 'ai') {
+                    lastResults = msg.results;
+                }
+            });
+            if (lastResults) {
+                this.resultsContent.innerHTML = '';
+                this.updateResults({ results: lastResults });
+            }
+        } catch (err) {
+            console.error('Failed to load history:', err);
+        }
     }
 
     autoResize() {
@@ -496,7 +518,7 @@ class InvestigationInterface {
         return await response.json();
     }
 
-    addMessage(text, sender) {
+    addMessage(text, sender, ts = null) {
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
         
@@ -522,7 +544,7 @@ class InvestigationInterface {
         
         const messageTime = document.createElement('div');
         messageTime.className = 'message-time';
-        messageTime.textContent = this.getCurrentTime();
+        messageTime.textContent = ts ? this.formatTimestamp(ts) : this.getCurrentTime();
         
         content.appendChild(messageText);
         content.appendChild(messageTime);
@@ -532,6 +554,11 @@ class InvestigationInterface {
         
         this.chatMessages.appendChild(messageDiv);
         this.scrollToBottom();
+    }
+
+    formatTimestamp(ts) {
+        const date = new Date(ts * 1000);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     formatMessage(text) {

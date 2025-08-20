@@ -39,7 +39,36 @@ def create_app():
         app.register_blueprint(main_bp)
         app.register_blueprint(auth_bp)
 
-        # This command creates the database tables based on your models
+        # Create database tables if they don't exist
         db.create_all()
+
+        # --- Minimal migration for ChatMessage table ---
+        # Older databases may lack the new columns introduced for
+        # chat history persistence. We inspect the existing table and
+        # add any missing columns so the application can run without
+        # requiring a manual database reset.
+        from sqlalchemy import inspect, text
+        inspector = inspect(db.engine)
+        if 'chat_message' in inspector.get_table_names():
+            columns = {col['name'] for col in inspector.get_columns('chat_message')}
+
+            # Older databases stored the message body in a column named
+            # ``message``. SQLite's limited ALTER TABLE support makes
+            # renaming unreliable across versions, so instead we add the new
+            # ``content`` column when missing and copy any existing data from
+            # ``message``.
+            if 'content' not in columns:
+                db.session.execute(text('ALTER TABLE chat_message ADD COLUMN content TEXT'))
+                if 'message' in columns:
+                    db.session.execute(
+                        text('UPDATE chat_message SET content = message WHERE content IS NULL')
+                    )
+
+            # Ensure newer fields exist
+            if 'results' not in columns:
+                db.session.execute(text('ALTER TABLE chat_message ADD COLUMN results TEXT'))
+            if 'timestamp' not in columns:
+                db.session.execute(text('ALTER TABLE chat_message ADD COLUMN timestamp FLOAT'))
+            db.session.commit()
 
         return app
