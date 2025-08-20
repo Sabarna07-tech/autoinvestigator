@@ -151,6 +151,17 @@ def investigate():
         # the full results for the side panel
         summary = (result_text[:200].strip() + '...') if len(result_text) > 200 else result_text
 
+        # Store user query and AI response
+        user_msg = ChatMessage(user_id=current_user.id, role='user', content=user_query)
+        ai_msg = ChatMessage(
+            user_id=current_user.id,
+            role='ai',
+            content=summary or 'Investigation completed successfully.',
+            results=result_text,
+        )
+        db.session.add_all([user_msg, ai_msg])
+        db.session.commit()
+
         response_data = {
             'status': 'success',
             'message': summary or 'Investigation completed successfully.',
@@ -174,25 +185,25 @@ def investigate():
         return jsonify({'error': str(e)}), 500
 
 
-@main_bp.route('/api/chat-history', methods=['GET'])
+@main_bp.route('/api/history', methods=['GET'])
 @login_required
-def chat_history():
-    """Return saved chat messages for the current user."""
-    messages = (
-        ChatMessage.query
-        .filter_by(user_id=current_user.id)
-        .order_by(ChatMessage.timestamp.asc())
-        .all()
-    )
-    history = [
+def history():
+    """Return chat history for the current user."""
+    messages = (ChatMessage.query
+                .filter_by(user_id=current_user.id)
+                .order_by(ChatMessage.timestamp)
+                .all())
+    serialized = [
         {
             'role': m.role,
-            'message': m.message,
-            'timestamp': m.timestamp.isoformat(),
+            'content': m.content,
+            'results': m.results,
+            'timestamp': m.timestamp,
         }
         for m in messages
     ]
-    return jsonify(history)
+    return jsonify(serialized)
+
 
 
 @main_bp.route('/api/upload-pdf', methods=['POST'])

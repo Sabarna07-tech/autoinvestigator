@@ -153,14 +153,24 @@ class InvestigationInterface {
 
     async loadChatHistory() {
         try {
-            const resp = await fetch('/api/chat-history');
+
+            const resp = await fetch('/api/history');
             if (!resp.ok) return;
-            const history = await resp.json();
-            history.forEach(msg => {
-                this.addMessage(msg.message, msg.role, msg.timestamp);
+            const data = await resp.json();
+            let lastResults = null;
+            data.forEach(msg => {
+                this.addMessage(msg.content, msg.role, msg.timestamp);
+                if (msg.role === 'ai') {
+                    lastResults = msg.results;
+                }
             });
+            if (lastResults) {
+                this.resultsContent.innerHTML = '';
+                this.updateResults({ results: lastResults });
+            }
         } catch (err) {
-            console.error('Failed to load chat history:', err);
+            console.error('Failed to load history:', err);
+
         }
     }
 
@@ -510,7 +520,8 @@ class InvestigationInterface {
         return await response.json();
     }
 
-    addMessage(text, sender, timestamp = null) {
+    addMessage(text, sender, ts = null) {
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
         
@@ -535,11 +546,9 @@ class InvestigationInterface {
         }
         
         const messageTime = document.createElement('div');
-        messageTime.className = 'message-time';
-        messageTime.textContent = timestamp
-            ? new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : this.getCurrentTime();
-        
+
+        messageTime.textContent = ts ? this.formatTimestamp(ts) : this.getCurrentTime();
+
         content.appendChild(messageText);
         content.appendChild(messageTime);
         
@@ -548,6 +557,11 @@ class InvestigationInterface {
         
         this.chatMessages.appendChild(messageDiv);
         this.scrollToBottom();
+    }
+
+    formatTimestamp(ts) {
+        const date = new Date(ts * 1000);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     }
 
     formatMessage(text) {
