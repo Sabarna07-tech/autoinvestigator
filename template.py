@@ -40,8 +40,8 @@ files = [
     "client/ui.py",
     "client/demo.py",
     "client/mcp_client.py",
-    
-    "shared/__init__.py"
+
+    "shared/__init__.py",
     "shared/utils.py",
     "shared/config.py",
     "shared/gemini.py",
