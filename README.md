@@ -69,3 +69,26 @@ rendering. Configuration values and helper utilities in the `shared` package
 are imported on both sides to provide consistent settings and common
 functionality throughout the system.
 
+## Running Locally
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Provide API keys by setting environment variables (e.g., `GEMINI_KEY`, `GOOGL_SEARCH_KEY`, `CSE`) or creating a `.env` file.
+3. Launch the full stack (API server + web UI):
+   ```bash
+   python run_web_app.py
+   ```
+   This starts the API server at http://localhost:8000 and the web interface at http://localhost:5000.
+
+   The application stores each user's chat history in a local SQLite database so previous investigations reappear after reloading.
+
+To run the components separately:
+```bash
+# Terminal 1
+SERVER_PORT=8000 python server.py
+
+# Terminal 2
+python run_web_app.py
+```

@@ -10,7 +10,8 @@ body {
     line-height: 1.6;
     color: #ffffff;
     background: #0a0a0a;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 /* Animated Background */
@@ -230,6 +231,7 @@ body {
     flex-direction: column;
     background: rgba(255, 255, 255, 0.02);
     position: relative;
+    min-height: 0;
 }
 
 .chat-header {

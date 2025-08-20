@@ -1,5 +1,5 @@
 from flask_login import UserMixin
-# Import the 'db' instance from the client package's __init__.py
+import time
 from . import db
 
 class User(UserMixin, db.Model):
@@ -12,3 +12,17 @@ class User(UserMixin, db.Model):
     # Fields for email verification
     verification_code = db.Column(db.String(10), nullable=True)
     is_verified = db.Column(db.Boolean, nullable=False, default=False)
+
+
+class ChatMessage(db.Model):
+    """Store individual chat messages for each user."""
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    role = db.Column(db.String(10), nullable=False)  # 'user' or 'ai'
+    content = db.Column(db.Text, nullable=False)
+    results = db.Column(db.Text, nullable=True)
+    timestamp = db.Column(db.Float, default=lambda: time.time(), nullable=False)
+
+    user = db.relationship('User', backref=db.backref('messages', lazy=True))
+

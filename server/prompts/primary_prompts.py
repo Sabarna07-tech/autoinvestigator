@@ -41,7 +41,7 @@ BASIC_RESPONSE_TEMPLATE="""
         },
         {
             id:<request_id>,
-            method: "tools/<tool_name>,
+            method: "tools/<tool_name>",
             results:[...]
         },
         ...
@@ -59,5 +59,5 @@ Your task is: **Given a user's natural language query, generate a structured too
 ```json
 {BASIC_REQUEST_TEMPLATE}
 ```
-**User Query** : 
+**User Query** :
 """
