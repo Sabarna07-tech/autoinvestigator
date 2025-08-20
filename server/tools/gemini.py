@@ -1,6 +1,8 @@
-import google.generativeai as genai
-from shared.config import GEMINI_KEY, GEMINI_MODEL
 import os
+
+import google.generativeai as genai
+from shared.config import GEMINI_MODEL
+from shared import config
 
 class GeminiAgent(object):
     def __new__(cls):
@@ -12,8 +14,8 @@ class GeminiAgent(object):
         # This check prevents re-initialization in the singleton pattern
         if not hasattr(self, 'model'):
             try:
-                # Use os.getenv directly as it's more standard than importing a variable
-                api_key = os.getenv('GEMINI_API_KEY') 
+                # Load the API key using the shared config constant
+                api_key = os.getenv(config.GEMINI_KEY)
                 if not api_key:
                     raise ValueError("GEMINI_API_KEY environment variable not set.")
                 genai.configure(api_key=api_key)
