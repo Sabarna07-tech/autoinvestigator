@@ -76,13 +76,19 @@ functionality throughout the system.
    pip install -r requirements.txt
    ```
 2. Provide API keys by setting environment variables (e.g., `GEMINI_KEY`, `GOOGL_SEARCH_KEY`, `CSE`) or creating a `.env` file.
-3. Start the web interface:
+
+3. Launch the full stack (API server + web UI):
    ```bash
    python run_web_app.py
    ```
-   The app will launch at http://localhost:5000 and open a browser tab.
+   This starts the API server at http://localhost:8000 and the web interface at http://localhost:5000.
 
-To run only the API server, execute:
+To run the components separately:
 ```bash
-python server.py
+# Terminal 1
+SERVER_PORT=8000 python server.py
+
+# Terminal 2
+python run_web_app.py
+
 ```
