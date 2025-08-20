@@ -69,3 +69,20 @@ rendering. Configuration values and helper utilities in the `shared` package
 are imported on both sides to provide consistent settings and common
 functionality throughout the system.
 
+## Running Locally
+
+1. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. Provide API keys by setting environment variables (e.g., `GEMINI_KEY`, `GOOGL_SEARCH_KEY`, `CSE`) or creating a `.env` file.
+3. Start the web interface:
+   ```bash
+   python run_web_app.py
+   ```
+   The app will launch at http://localhost:5000 and open a browser tab.
+
+To run only the API server, execute:
+```bash
+python server.py
+```

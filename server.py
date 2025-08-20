@@ -170,8 +170,8 @@ def request_handler(request):
             response['results'].append(res)
         return response
     except Exception as e:
-        raise e
-        return {"message":"Bad Request. Please check the format"}
+        print(f"[request_handler] Error processing request: {e}")
+        return {"message": "Bad Request. Please check the format", "error": str(e)}
 
 
 @app.route('/requests',methods=['POST'])
