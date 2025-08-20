@@ -77,11 +77,16 @@ functionality throughout the system.
    ```
 2. Provide API keys by setting environment variables (e.g., `GEMINI_KEY`, `GOOGL_SEARCH_KEY`, `CSE`) or creating a `.env` file.
 
+
 3. Launch the full stack (API server + web UI):
    ```bash
    python run_web_app.py
    ```
    This starts the API server at http://localhost:8000 and the web interface at http://localhost:5000.
+
+
+   User accounts and chat history are stored in a local SQLite database (`instance/autoinvestigator.db`), so past conversations reappear after reloading the page.
+
 
 To run the components separately:
 ```bash
@@ -90,6 +95,5 @@ SERVER_PORT=8000 python server.py
 
 # Terminal 2
 python run_web_app.py
-
 
 ```
