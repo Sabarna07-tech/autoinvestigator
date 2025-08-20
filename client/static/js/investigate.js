@@ -153,6 +153,7 @@ class InvestigationInterface {
 
     async loadChatHistory() {
         try {
+
             const resp = await fetch('/api/history');
             if (!resp.ok) return;
             const data = await resp.json();
@@ -169,6 +170,7 @@ class InvestigationInterface {
             }
         } catch (err) {
             console.error('Failed to load history:', err);
+
         }
     }
 
@@ -519,6 +521,7 @@ class InvestigationInterface {
     }
 
     addMessage(text, sender, ts = null) {
+
         const messageDiv = document.createElement('div');
         messageDiv.className = `message ${sender}-message`;
         
@@ -543,9 +546,9 @@ class InvestigationInterface {
         }
         
         const messageTime = document.createElement('div');
-        messageTime.className = 'message-time';
+
         messageTime.textContent = ts ? this.formatTimestamp(ts) : this.getCurrentTime();
-        
+
         content.appendChild(messageText);
         content.appendChild(messageTime);
         

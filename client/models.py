@@ -1,5 +1,7 @@
 from flask_login import UserMixin
+
 import time
+
 from . import db
 
 class User(UserMixin, db.Model):
@@ -25,4 +27,5 @@ class ChatMessage(db.Model):
     timestamp = db.Column(db.Float, default=lambda: time.time(), nullable=False)
 
     user = db.relationship('User', backref=db.backref('messages', lazy=True))
+
 

@@ -169,6 +169,16 @@ def investigate():
             'tool_used': selected_tool,
             'timestamp': time.time(),
         }
+
+        # Persist chat messages for this user
+        try:
+            db.session.add(ChatMessage(user_id=current_user.id, role='user', message=user_query))
+            db.session.add(ChatMessage(user_id=current_user.id, role='ai', message=summary))
+            db.session.commit()
+        except Exception as db_err:
+            db.session.rollback()
+            print(f"Error saving chat message: {db_err}")
+
         return jsonify(response_data)
 
     except Exception as e:
@@ -193,6 +203,7 @@ def history():
         for m in messages
     ]
     return jsonify(serialized)
+
 
 
 @main_bp.route('/api/upload-pdf', methods=['POST'])

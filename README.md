@@ -76,6 +76,7 @@ functionality throughout the system.
    pip install -r requirements.txt
    ```
 2. Provide API keys by setting environment variables (e.g., `GEMINI_KEY`, `GOOGL_SEARCH_KEY`, `CSE`) or creating a `.env` file.
+
 3. Launch the full stack (API server + web UI):
    ```bash
    python run_web_app.py
@@ -84,6 +85,7 @@ functionality throughout the system.
 
    The application stores each user's chat history in a local SQLite database so previous investigations reappear after reloading.
 
+
 To run the components separately:
 ```bash
 # Terminal 1
@@ -91,4 +93,5 @@ SERVER_PORT=8000 python server.py
 
 # Terminal 2
 python run_web_app.py
+
 ```
