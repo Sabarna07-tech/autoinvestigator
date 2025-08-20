@@ -76,6 +76,7 @@ functionality throughout the system.
    pip install -r requirements.txt
    ```
 2. Provide API keys by setting environment variables (e.g., `GEMINI_KEY`, `GOOGL_SEARCH_KEY`, `CSE`) or creating a `.env` file.
+
 3. Launch the full stack (API server + web UI):
    ```bash
    python run_web_app.py
@@ -89,4 +90,6 @@ SERVER_PORT=8000 python server.py
 
 # Terminal 2
 python run_web_app.py
+
+
 ```
