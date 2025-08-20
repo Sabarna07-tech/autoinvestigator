@@ -147,9 +147,13 @@ def investigate():
         if results_list:
             result_text = results_list[0].get('results', [''])[0]
 
+        # Generate a short summary for the chat history while preserving
+        # the full results for the side panel
+        summary = (result_text[:200].strip() + '...') if len(result_text) > 200 else result_text
+
         response_data = {
             'status': 'success',
-            'message': result_text,
+            'message': summary or 'Investigation completed successfully.',
             'results': result_text,
             'tool_used': selected_tool,
             'timestamp': time.time(),
